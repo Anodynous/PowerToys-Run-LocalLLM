@@ -8,18 +8,18 @@
 	<UseWindowsForms>true</UseWindowsForms>
 	<RootNamespace>Community.PowerToys.Run.Plugin.LocalLLm</RootNamespace>
 	<AssemblyName>Community.PowerToys.Run.Plugin.LocalLLM</AssemblyName>
-	<Version>1.0.2</Version>
+	<Version>1.0.3</Version>
 	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
 
  
   <ItemGroup Condition="'$(Platform)' == 'x64'">
-    <Reference Include="..\lib\x64\PowerToys.Common.UI.dll" />
-    <Reference Include="..\lib\x64\PowerToys.ManagedCommon.dll" />
-    <Reference Include="..\lib\x64\PowerToys.Settings.UI.Lib.dll" />
-    <Reference Include="..\lib\x64\Wox.Infrastructure.dll" />
-    <Reference Include="..\lib\x64\Wox.Plugin.dll" />
+    <Reference Include="PowerToys.Common.UI.dll" HintPath="$(MSBuildThisFileDirectory)..\tools\x64\PowerToys.Common.UI.dll" />
+	<Reference Include="PowerToys.ManagedCommon.dll" HintPath="$(MSBuildThisFileDirectory)..\tools\x64\PowerToys.ManagedCommon.dll" />
+	<Reference Include="PowerToys.Settings.UI.Lib.dll" HintPath="$(MSBuildThisFileDirectory)..\tools\x64\PowerToys.Settings.UI.Lib.dll" />
+	<Reference Include="Wox.Infrastructure.dll" HintPath="$(MSBuildThisFileDirectory)..\tools\x64\Wox.Infrastructure.dll" />
+	<Reference Include="Wox.Plugin.dll" HintPath="$(MSBuildThisFileDirectory)..\tools\x64\Wox.Plugin.dll" />
   </ItemGroup>
   <ItemGroup>
     <None Include="plugin.json">
@@ -30,6 +30,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Community.PowerToys.Run.Plugin.Dependencies" Version="0.85.1" />
+    <PackageReference Include="Community.PowerToys.Run.Plugin.Dependencies"/>
   </ItemGroup>
 </Project>
