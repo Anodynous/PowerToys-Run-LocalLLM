@@ -70,3 +70,8 @@ llm what is the capital of india
 3. Restart PowerToys.
 
 Shoutout to [@Avaith3600](https://github.com/Advaith3600) for inspiring me and helping me in building this plugin.
+
+## Additions In This Fork
+- Better theme specific plugin icons.
+- Support for clipboard injection using custom keyword.
+- User configurable keyword for triggering prompt. Avoids spamming endpoint while typing.

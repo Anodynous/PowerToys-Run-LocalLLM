@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -34,6 +33,7 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
         private string endpoint;
         private string model;
         private string clipboardTriggerKeyword;
+        private string sendTriggerKeyword;
 
         public IEnumerable<PluginAdditionalOption> AdditionalOptions =>
         [
@@ -61,6 +61,14 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
                 PluginOptionType = PluginAdditionalOption.AdditionalOptionType.Textbox,
                 TextValue = "<clip>", // Default value
             },
+            new()
+            {
+                Key = "SendTriggerKeyword",
+                DisplayLabel = "Send Trigger Keyword",
+                DisplayDescription = "Enter keyword which will trigger the query to be sent to Ollama.",
+                PluginOptionType = PluginAdditionalOption.AdditionalOptionType.Textbox,
+                TextValue = "LL", // Default value
+            },
         ];
 
         public void UpdateSettings(PowerLauncherPluginSettings settings)
@@ -70,6 +78,7 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
                 endpoint = settings.AdditionalOptions.FirstOrDefault(x => x.Key == "LLMEndpoint")?.TextValue ?? "http://localhost:11434/api/generate";
                 model = settings.AdditionalOptions.FirstOrDefault(x => x.Key == "Model")?.TextValue ?? "llama3.1";
                 clipboardTriggerKeyword = settings.AdditionalOptions.FirstOrDefault(x => x.Key == "ClipboardTriggerKeyword")?.TextValue ?? "<clip>";
+                sendTriggerKeyword = settings.AdditionalOptions.FirstOrDefault(x => x.Key == "SendTriggerKeyword")?.TextValue ?? "LL";
             }
         }
 
@@ -112,18 +121,23 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
                 }
             }
 
-            var response = QueryLLMStreamAsync(input).Result;
+            var response = "End input with: " + sendTriggerKeyword + "'";
+            if (input.EndsWith(sendTriggerKeyword, StringComparison.Ordinal))
+            {
+                input = input[..^sendTriggerKeyword.Length];
+                response = QueryLLMStreamAsync(input).Result;
+            }
 
             return
             [
                 new()
                 {
-                    Title = "LLM Response",
+                    Title = model,
                     SubTitle = response,
                     IcoPath = IconPath,
                     Action = e =>
                     {
-                        Context.API.ShowMsg("LLM Response", response);
+                        Context.API.ShowMsg(model, response);
                         return true;
                     },
                     ContextData = new Dictionary<string, string> { { "copy", response } },
