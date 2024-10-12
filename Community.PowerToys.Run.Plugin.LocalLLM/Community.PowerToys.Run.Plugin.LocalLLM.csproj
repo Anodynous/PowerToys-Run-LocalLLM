@@ -29,4 +29,7 @@
       <CopyToOutputDirectory> PreserveNewest </CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Community.PowerToys.Run.Plugin.Dependencies" Version="0.85.1" />
+  </ItemGroup>
 </Project>
