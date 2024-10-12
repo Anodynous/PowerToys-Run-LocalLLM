@@ -3,12 +3,12 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
-using System.Windows.Controls;
 using System.Windows.Input;
 using ManagedCommon;
 using Microsoft.PowerToys.Settings.UI.Library;
@@ -33,6 +33,7 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
 
         private string endpoint;
         private string model;
+        private string clipboardTriggerKeyword;
 
         public IEnumerable<PluginAdditionalOption> AdditionalOptions =>
         [
@@ -40,7 +41,7 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
             {
                 Key = "LLMEndpoint",
                 DisplayLabel = "LLM Endpoint",
-                DisplayDescription = "Enter the endpoint of your LLM model. Ex. http://localhost:11434/api/generate",
+                DisplayDescription = "Enter the endpoint of your LLM model. E.g. http://localhost:11434/api/generate",
                 PluginOptionType = PluginAdditionalOption.AdditionalOptionType.Textbox,
                 TextValue = "http://localhost:11434/api/generate",
             },
@@ -48,9 +49,17 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
             {
                 Key = "Model",
                 DisplayLabel = "Model",
-                DisplayDescription = "Enter the Model to be used in Ollama. Ex. llama3.1(default). Make sure to pull model in ollama before using here.",
+                DisplayDescription = "Enter the Model to be used in Ollama. E.g. llama3.1(default). Make sure to pull model in ollama before using here.",
                 PluginOptionType = PluginAdditionalOption.AdditionalOptionType.Textbox,
                 TextValue = "llama3.1",
+            },
+            new()
+            {
+                Key = "ClipboardTriggerKeyword",
+                DisplayLabel = "Clipboard Trigger Keyword",
+                DisplayDescription = "Enter keyword which will be substituted by the clipboard contents in the query.",
+                PluginOptionType = PluginAdditionalOption.AdditionalOptionType.Textbox,
+                TextValue = "<clip>", // Default value
             },
         ];
 
@@ -60,6 +69,7 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
             {
                 endpoint = settings.AdditionalOptions.FirstOrDefault(x => x.Key == "LLMEndpoint")?.TextValue ?? "http://localhost:11434/api/generate";
                 model = settings.AdditionalOptions.FirstOrDefault(x => x.Key == "Model")?.TextValue ?? "llama3.1";
+                clipboardTriggerKeyword = settings.AdditionalOptions.FirstOrDefault(x => x.Key == "ClipboardTriggerKeyword")?.TextValue ?? "<clip>";
             }
         }
 
@@ -77,6 +87,31 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
         public List<Result> Query(Query query, bool delayedExecution)
         {
             var input = query.Search;
+
+            // Check if the user wants to use the clipboard contents as part of their search query.
+            if (input.Contains(clipboardTriggerKeyword))
+            {
+                try
+                {
+                    // Retrieve content from the clipboard and replace the keyword with the actual text.
+                    var clipboardContent = System.Windows.Application.Current.Dispatcher.Invoke(() => Clipboard.GetText());
+                    input = input.Replace(clipboardTriggerKeyword, clipboardContent);
+                }
+                catch (Exception ex)
+                {
+                    return
+                    [
+                        new()
+                        {
+                            Title = "Clipboard Error",
+                            SubTitle = $"Could not read from clipboard: {ex.Message}",
+                            IcoPath = IconPath,
+                            Action = e => true,
+                        },
+                    ];
+                }
+            }
+
             var response = QueryLLMStreamAsync(input).Result;
 
             return
@@ -85,7 +120,7 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
                 {
                     Title = "LLM Response",
                     SubTitle = response,
-                    IcoPath = "Images\\icon.png",
+                    IcoPath = IconPath,
                     Action = e =>
                     {
                         Context.API.ShowMsg("LLM Response", response);
@@ -143,7 +178,7 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
             return results;
         }
 
-        public Control CreateSettingPanel()
+        public System.Windows.Controls.Control CreateSettingPanel()
         {
             throw new NotImplementedException();
         }
