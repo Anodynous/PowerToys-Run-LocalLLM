@@ -1,6 +1,6 @@
 {
 	"ID": "1CDE310EA37046F797117442344A72F2",
-	"ActionKeyword": "llm",
+	"ActionKeyword": "llm ",
 	"IsGlobal": false,
 	"Name": "LocalLLM",
 	"Author": "Darkdriller",
@@ -8,7 +8,7 @@
 	"Language": "csharp",
 	"Website": "https://github.com/Anodynous/PowerToys-Run-LocalLLM",
 	"ExecuteFileName": "Community.PowerToys.Run.Plugin.LocalLLM.dll",
-	"IcoPathDark": "Images\\icon.png",
-	"IcoPathLight": "Images\\icon.png",
+	"IcoPathDark": "Images\\ollama.dark.png",
+	"IcoPathLight": "Images\\ollama.light.png",
 	"DynamicLoading": false
 }
