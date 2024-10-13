@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
@@ -12,6 +13,7 @@ using System.Windows.Input;
 using ManagedCommon;
 using Microsoft.PowerToys.Settings.UI.Library;
 using Wox.Plugin;
+using Wox.Plugin.Logger;
 using Clipboard = System.Windows.Clipboard;
 
 namespace Community.PowerToys.Run.Plugin.LocalLLM
@@ -34,9 +36,11 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
         private string model;
         private string clipboardTriggerKeyword;
         private string sendTriggerKeyword;
+        private List<string> modelNames = ["Failed to fetch"];
 
         public IEnumerable<PluginAdditionalOption> AdditionalOptions =>
         [
+
             new()
             {
                 Key = "LLMEndpoint",
@@ -50,8 +54,9 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
                 Key = "Model",
                 DisplayLabel = "Model",
                 DisplayDescription = "Enter the Model to be used in Ollama. E.g. llama3.1(default). Make sure to pull model in ollama before using here.",
-                PluginOptionType = PluginAdditionalOption.AdditionalOptionType.Textbox,
-                TextValue = "llama3.1",
+                PluginOptionType = PluginAdditionalOption.AdditionalOptionType.Combobox,
+                ComboBoxItems = GetOllamaModelList(), // CreateComboBoxItems(modelNames),
+                ComboBoxValue = 0,
             },
             new()
             {
@@ -71,12 +76,76 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
             },
         ];
 
+        private List<KeyValuePair<string, string>> CreateComboBoxItems(List<string> modelNames)
+        {
+            var comboBoxItems = new List<KeyValuePair<string, string>>();
+
+            for (int i = 0; i < modelNames.Count; i++)
+            {
+                comboBoxItems.Add(new KeyValuePair<string, string>(modelNames[i], i.ToString(CultureInfo.InvariantCulture)));
+            }
+
+            return comboBoxItems;
+        }
+
+        private async Task<List<string>> GetModelListAsync()
+        {
+            var endpointUrl = "http://127.0.0.1:11434/api/tags";
+
+            try
+            {
+                var response = await Client.GetAsync(endpointUrl);
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                var jsonDocument = JsonDocument.Parse(content);
+
+                var modelNames = new List<string>();
+
+                foreach (var model in jsonDocument.RootElement.GetProperty("models").EnumerateArray())
+                {
+                    var modelName = model.GetProperty("name").GetString();
+                    if (!string.IsNullOrEmpty(modelName))
+                    {
+                        modelNames.Add(modelName);
+                    }
+                }
+
+                Log.Info(string.Join("\n", modelNames), typeof(Task));
+                return modelNames;
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error fetching models: {ex.Message}", typeof(Task));
+                return new List<string>();
+            }
+        }
+
+        private static List<KeyValuePair<string, string>> GetOllamaModelList()
+        {
+            // List (Sorted for first day is Sunday)
+            var list = new List<KeyValuePair<string, string>>
+            {
+                new KeyValuePair<string, string>("llama3.2:3b-instruct-q8_0", "0"),
+                new KeyValuePair<string, string>("model 1", "1"),
+                new KeyValuePair<string, string>("model 2", "2"),
+                new KeyValuePair<string, string>("model 3", "3"),
+                new KeyValuePair<string, string>("model 4", "4"),
+                new KeyValuePair<string, string>("model 5", "5"),
+                new KeyValuePair<string, string>("model 6", "6"),
+            };
+            return list;
+        }
+
         public void UpdateSettings(PowerLauncherPluginSettings settings)
         {
             if (settings != null && settings.AdditionalOptions != null)
             {
-                endpoint = settings.AdditionalOptions.FirstOrDefault(x => x.Key == "LLMEndpoint")?.TextValue ?? "http://localhost:11434/api/generate";
-                model = settings.AdditionalOptions.FirstOrDefault(x => x.Key == "Model")?.TextValue ?? "llama3.1";
+                endpoint = settings.AdditionalOptions.FirstOrDefault(x => x.Key == "LLMEndpoint")?.TextValue ?? "http://localhost:11434/api/generate"; // TODO: use the LLMEndpoint setting
+
+                int modelInt = (int)settings?.AdditionalOptions.First(x => x.Key == "Model").ComboBoxValue;
+                model = GetOllamaModelList()[modelInt].Key;
+
                 clipboardTriggerKeyword = settings.AdditionalOptions.FirstOrDefault(x => x.Key == "ClipboardTriggerKeyword")?.TextValue ?? "<clip>";
                 sendTriggerKeyword = settings.AdditionalOptions.FirstOrDefault(x => x.Key == "SendTriggerKeyword")?.TextValue ?? "LL";
             }
@@ -87,6 +156,7 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
             Context = context ?? throw new ArgumentNullException(nameof(context));
             Context.API.ThemeChanged += OnThemeChanged;
             UpdateIconPath(Context.API.GetCurrentTheme());
+            modelNames = GetModelListAsync().Result;
         }
 
         private void OnThemeChanged(Theme currentTheme, Theme newTheme) => UpdateIconPath(newTheme);
@@ -145,6 +215,11 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
             ];
         }
 
+        private sealed class ModelInfo
+        {
+            public string Name { get; set; }
+        }
+
         public async Task<string> QueryLLMStreamAsync(string input)
         {
             var endpointUrl = endpoint;
@@ -166,9 +241,9 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
 
                 var responseStream = await response.Content.ReadAsStreamAsync();
                 using var streamReader = new System.IO.StreamReader(responseStream);
-                #nullable enable
+#nullable enable
                 string? line;
-                #nullable disable
+#nullable disable
                 string finalResponse = string.Empty;
 
                 while ((line = await streamReader.ReadLineAsync()) != null)

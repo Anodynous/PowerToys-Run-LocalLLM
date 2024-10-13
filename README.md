@@ -4,6 +4,11 @@ PowerToys Run plugin which will enable to use LLMs on Ollama endpoints locally.
 
 ![Screenshot](screenshots/screenshot1.png)
 
+## Changes In This Fork
+- Better theme specific plugin icons.
+- Support for clipboard injection using custom keyword.
+- User configurable keyword for triggering prompt. Avoids spamming endpoint while typing.
+
 ## Note
 
 Ollama doesnt not have a release for ARM64 Windows yet. So this plugin doesnot have a ARM64 Release yet. It will be added once Ollama releases a stable ARM64 version.
@@ -70,8 +75,3 @@ llm what is the capital of india
 3. Restart PowerToys.
 
 Shoutout to [@Avaith3600](https://github.com/Advaith3600) for inspiring me and helping me in building this plugin.
-
-## Additions In This Fork
-- Better theme specific plugin icons.
-- Support for clipboard injection using custom keyword.
-- User configurable keyword for triggering prompt. Avoids spamming endpoint while typing.
