@@ -90,7 +90,7 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
 
         private async Task<List<string>> GetModelListAsync()
         {
-            var endpointUrl = "http://127.0.0.1:11434/api/tags";
+            var endpointUrl = endpoint.Replace("/generate", "/tags");
 
             try
             {
@@ -141,7 +141,7 @@ namespace Community.PowerToys.Run.Plugin.LocalLLM
         {
             if (settings != null && settings.AdditionalOptions != null)
             {
-                endpoint = settings.AdditionalOptions.FirstOrDefault(x => x.Key == "LLMEndpoint")?.TextValue ?? "http://localhost:11434/api/generate"; // TODO: use the LLMEndpoint setting
+                endpoint = settings.AdditionalOptions.FirstOrDefault(x => x.Key == "LLMEndpoint")?.TextValue ?? "http://localhost:11434/api/generate";
 
                 int modelInt = (int)settings?.AdditionalOptions.First(x => x.Key == "Model").ComboBoxValue;
                 model = GetOllamaModelList()[modelInt].Key;
